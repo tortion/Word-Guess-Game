@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Sherrif Mike's Hangman Hangout</title>
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+</head>
+
+<body>
+  <div class="jumbotron">
+    <h1 class="text-center">H a N g m A N !</h1>
+    <h3 class="text-center">Guess letters in the word below... or die !!</h3>
+  </div>
+
+  <div class="container">
+
+    <div class="row">
+      <div class="col-md-3">
+        <div class="card mb-2">
+          <img id="hangDude" class="img-thumbnail" alt="Responsive image">
+        </div>
+      </div>
+      <div class="col-md-9 d-flex align-items-stretch justify-content-center flex-column">
+        <div class="card mb-2">
+          <h3 class="card-header bg-primary text-light">Category: Software Dev terms</h3>
+          <div class="card mb-1"></div>
+          <div class="card-body text-center bg-primary text-light">
+            <h1 id="hAnswerReveal"></h1>
+            <div class="card mb-4"></div>
+            <button class="btn btn-light" onclick="playAudio()">Enable background audio</button>
+            <button class="btn btn-light" onclick="pauseAudio()">Disable background audio</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card mb-2">
+          <h3 class="card-header">Picked letters</h3>
+          <div class="card-body text-center">
+            <h3 id="hPickedLetters"></h3>
+            <!--- insert hPickedLettrs txt -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card mb-2">
+          <h3 class="card-header">Game Status</h3>
+          <div class="card-body text-center">
+            <h3 id="hStatusMsg"></h3>
+            <!--- insert hStatusMsg txt -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <audio id="myAudio" src="./assets/audio/Cowboy_Theme-Pavak-1711860633.mp3"></audio>
+  
+  <script type="text/javascript">
+
+    var letterList = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    var wordList = [
+      "JENKINS",
+      "JULES",
+      "CELERY",
+      "APPFIT",
+      "INTELLIJ",
+      "SDLC",
+      "PYTHON",
+      "JAVASCRIPT",
+      "BOOTSTRAP"
+    ];
+
+    // dump wordList to the console for debugging purposes
+    for (var i = 0; i < wordList.length; i++) {
+      console.log(wordList[i]);
+    }
+
+    var maxGuesses = 10;
+    var answerReveal = "";
+    var totalMatches = 0;
+    var oldTotalMatches = 0;
+    var status = false;
+    var guessedLetters = "";
+    var secretWord = wordList[Math.floor(Math.random() * wordList.length)];
+
+    var gAnswerReveal = document.getElementById("hAnswerReveal");
+    var gPickedLetters = document.getElementById("hPickedLetters");
+    var gStatusMsg = document.getElementById("hStatusMsg");
+    var gHangDude = document.getElementById("hangDude");
+    var backgroundTheme = document.getElementById("myAudio"); 
+    document.getElementById("myAudio").loop = true;
+
+    // load answerReveal with the appropriate # of '_' based on length of secretWord
+    for (var i = 0; i < secretWord.length; i++) {
+      answerReveal = answerReveal + "_ ";
+    }
+
+    //test code to display selected word and 'loaded' answerReveal
+    logStatus();
+    gAnswerReveal.textContent = answerReveal;
+    gPickedLetters.textContent = "none";
+    gStatusMsg.textContent = "Secret word has " + secretWord.length + " letters";
+    gHangDude.src = "./assets/images/0.jpg";
+    var guessLeft = maxGuesses;
+    var gameRunning = true;
+
+    document.onkeyup = function (event) {
+
+      var userGuess = event.key;
+      uGuess = userGuess;
+      uGuess = uGuess.toUpperCase();
+      if (gameRunning) {
+        if (letterList.includes(uGuess) === true) {              // check that user key pressed is in normalized letterList
+          if (guessedLetters.includes(uGuess) === false) {       // insure that the user has not guessed the same char twice
+            var anyMatched = false;
+            guessedLetters = guessedLetters + " " + uGuess;
+            oldTotalMatches = totalMatches;                      // builds list of 'used' letters
+
+            for (var n = 0; n < secretWord.length; n++) {        // checker loop; see if guess is in secretWord
+              if (uGuess === secretWord[n]) {
+                answerReveal = setCharAt(answerReveal, (n * 2), secretWord[n]);  // if so, update answerReveal with char
+                anyMatched = true;
+                totalMatches++;
+              }
+            }
+
+            if (anyMatched) {                                            // if at least one occurance
+              console.log("Yes '" + uGuess + "' : " + answerReveal);
+              gStatusMsg.textContent = "Good guess - there are " + (totalMatches - oldTotalMatches) + " of those !!";
+              gAnswerReveal.textContent = answerReveal;
+              if (totalMatches === secretWord.length) {                  // if won
+                if (guessLeft === maxGuesses) {
+                  gStatusMsg.textContent = "You are unstoppable !! (or a cheater) ... Press'\\' to restart";
+                  gAnswerReveal.textContent = answerReveal;
+                }
+                else {
+                  gAnswerReveal.textContent = answerReveal;
+                  gStatusMsg.textContent = "yOu WoN !! ... Press '\\' to restart";
+                }
+                gameRunning = false;
+              }
+            }
+            else {
+              guessLeft--;
+              gHangDude.src = "./assets/images/" + (maxGuesses - guessLeft) + ".jpg";
+              gPickedLetters.textContent = guessedLetters;
+              console.log("No '" + uGuess + "' : " + guessLeft + " remaining - guessed letters = " + guessedLetters);
+              gStatusMsg.textContent = "Nope ... " + guessLeft + " wrong guesses remaining"
+              if (guessLeft === 0) {                                  // if lost
+                gStatusMsg.textContent = "Hung One ... Secret word was '" + secretWord + "' ... Press '\\' to restart";
+                gameRunning = false;
+              }
+            }
+            gPickedLetters.textContent = guessedLetters;
+          }
+          else
+            gStatusMsg.textContent = "You guessed that already";                      // trap duplicative guesses
+        }
+        else
+          gStatusMsg.textContent = "Invalid key, only a..z please";                   // trap invalid keystrokes (num, special symb, etc.)
+      }
+      else {
+        if (uGuess === "\\")
+          startNewGame();
+      }
+    }
+
+    function startNewGame() {
+      gameRunning = true;
+      guessLeft = maxGuesses;
+      gHangDude.src = "./assets/images/" + (maxGuesses - guessLeft) + ".jpg";
+      answerReveal = "";
+      guessedLetters = "";
+      gPickedLetters.textContent = "none";
+      totalMatches = 0;
+      var oldSecretWord = secretWord;
+      do {
+        secretWord = wordList[Math.floor(Math.random() * wordList.length)];
+      } while (secretWord === oldSecretWord);
+
+      for (var i = 0; i < secretWord.length; i++) {
+        answerReveal = answerReveal + "_ ";
+      }
+      gStatusMsg.textContent = "Secret word has " + secretWord.length + " letters";
+      logStatus();
+    }
+
+    function logStatus() {
+      gAnswerReveal.textContent = answerReveal;
+      console.log("-----------------------------");
+      console.log("secret word: " + secretWord);
+      console.log(secretWord.length + " chars in length");
+      console.log(answerReveal);
+      console.log("-----------------------------");
+    }
+
+    function setCharAt(str, index, chr) {
+      if (index > str.length - 1) return str;
+      return str.substr(0, index) + chr + str.substr(index + 1);
+    }
+
+    function playAudio() {
+      backgroundTheme.play();
+    }
+
+    function pauseAudio() {
+      backgroundTheme.pause();
+    }
+
+  </script>
+</body>
+
+</html>
